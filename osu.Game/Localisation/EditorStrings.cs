@@ -145,6 +145,11 @@ namespace osu.Game.Localisation
         public static LocalisableString LimitedDistanceSnap => new TranslatableString(getKey(@"limited_distance_snap_grid"), @"Limit distance snap placement to current time");
 
         /// <summary>
+        /// "Lock to hit area"
+        /// </summary>
+        public static LocalisableString TaikoLockPlacementToHitArea => new TranslatableString(getKey(@"taiko_lock_to_hit_area"), @"Lock to hit area");
+
+        /// <summary>
         /// "Contract sidebars when not hovered"
         /// </summary>
         public static LocalisableString ContractSidebars => new TranslatableString(getKey(@"contract_sidebars"), @"Contract sidebars when not hovered");
