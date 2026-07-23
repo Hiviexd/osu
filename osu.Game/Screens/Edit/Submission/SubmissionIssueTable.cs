@@ -1,24 +1,28 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
-using System.Linq;
 using osu.Game.Overlays;
+using osu.Game.Rulesets.Edit;
 using osu.Game.Rulesets.Edit.Checks.Components;
 
 namespace osu.Game.Screens.Edit.Submission
 {
     public partial class SubmissionIssueTable : CompositeDrawable
     {
+        private const float scope_column_width = 150;
+
         [Resolved]
-        private BindableList<Issue> issues { get; set; } = null!;
+        private BindableList<BeatmapVerifier.ScopedIssue> issues { get; set; } = null!;
 
         private FillFlowContainer rowFlow = null!;
 
@@ -34,7 +38,7 @@ namespace osu.Game.Screens.Edit.Submission
                     Padding = new MarginPadding { Horizontal = Verify.IssueTable.ROW_HORIZONTAL_PADDING },
                     Children = new Drawable[]
                     {
-                        new HeaderText("Category")
+                        new HeaderText("Scope")
                         {
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.CentreLeft,
@@ -43,13 +47,13 @@ namespace osu.Game.Screens.Edit.Submission
                         {
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.CentreLeft,
-                            Margin = new MarginPadding { Left = Verify.IssueTable.COLUMN_WIDTH + Verify.IssueTable.COLUMN_GAP },
+                            Margin = new MarginPadding { Left = scope_column_width + Verify.IssueTable.COLUMN_GAP },
                         },
                         new HeaderText("Message")
                         {
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.CentreLeft,
-                            Margin = new MarginPadding { Left = 2 * (Verify.IssueTable.COLUMN_WIDTH + Verify.IssueTable.COLUMN_GAP) },
+                            Margin = new MarginPadding { Left = scope_column_width + Verify.IssueTable.COLUMN_GAP + Verify.IssueTable.COLUMN_WIDTH + Verify.IssueTable.COLUMN_GAP },
                         },
                     }
                 },
@@ -81,33 +85,33 @@ namespace osu.Game.Screens.Edit.Submission
         {
             rowFlow.Clear(false);
 
-            foreach (var issue in issues
-                                  .OrderBy(i => i.Check.Metadata.Category)
-                                  .ThenBy(i => i.Time ?? double.MinValue))
+            foreach (var scopedIssue in issues
+                                        .OrderBy(i => i.Issue.Check.Metadata.Scope)
+                                        .ThenBy(i => i.Scope.ToString())
+                                        .ThenBy(i => i.Issue.Time ?? double.MinValue))
             {
-                var drawable = new DrawableIssue(issue)
+                rowFlow.Add(new DrawableIssue(scopedIssue)
                 {
                     RelativeSizeAxes = Axes.X,
-                };
-                rowFlow.Add(drawable);
+                });
             }
         }
 
         public partial class DrawableIssue : CompositeDrawable
         {
-            private readonly Issue issue;
+            private readonly BeatmapVerifier.ScopedIssue scopedIssue;
 
             private Box background = null!;
-            private OsuSpriteText issueCategoryText = null!;
+            private OsuSpriteText issueScopeText = null!;
             private OsuSpriteText issueTimestampText = null!;
             private OsuTextFlowContainer issueDetailFlow = null!;
 
             [Resolved]
             private OverlayColourProvider colourProvider { get; set; } = null!;
 
-            public DrawableIssue(Issue issue)
+            public DrawableIssue(BeatmapVerifier.ScopedIssue scopedIssue)
             {
-                this.issue = issue;
+                this.scopedIssue = scopedIssue;
             }
 
             [BackgroundDependencyLoader]
@@ -129,7 +133,7 @@ namespace osu.Game.Screens.Edit.Submission
                         Padding = new MarginPadding { Horizontal = Verify.IssueTable.ROW_HORIZONTAL_PADDING, Vertical = 4 },
                         Children = new Drawable[]
                         {
-                            issueCategoryText = new OsuSpriteText
+                            issueScopeText = new OsuSpriteText
                             {
                                 Anchor = Anchor.CentreLeft,
                                 Origin = Anchor.CentreLeft,
@@ -140,7 +144,7 @@ namespace osu.Game.Screens.Edit.Submission
                                 Anchor = Anchor.CentreLeft,
                                 Origin = Anchor.CentreLeft,
                                 Font = OsuFont.GetFont(size: Verify.IssueTable.TEXT_SIZE, weight: FontWeight.Bold),
-                                Margin = new MarginPadding { Left = Verify.IssueTable.COLUMN_WIDTH + Verify.IssueTable.COLUMN_GAP },
+                                Margin = new MarginPadding { Left = scope_column_width + Verify.IssueTable.COLUMN_GAP },
                             },
                             new Container
                             {
@@ -148,7 +152,7 @@ namespace osu.Game.Screens.Edit.Submission
                                 AutoSizeAxes = Axes.Y,
                                 Padding = new MarginPadding
                                 {
-                                    Left = 2 * (Verify.IssueTable.COLUMN_GAP + Verify.IssueTable.COLUMN_WIDTH),
+                                    Left = scope_column_width + Verify.IssueTable.COLUMN_GAP + Verify.IssueTable.COLUMN_WIDTH + Verify.IssueTable.COLUMN_GAP,
                                     Right = 0,
                                 },
                                 Child = issueDetailFlow = new OsuTextFlowContainer(cp => cp.Font = OsuFont.GetFont(size: Verify.IssueTable.TEXT_SIZE, weight: FontWeight.Medium))
@@ -172,7 +176,9 @@ namespace osu.Game.Screens.Edit.Submission
 
             private void updateState()
             {
-                issueCategoryText.Text = issue.Check.Metadata.Category.ToString();
+                Issue issue = scopedIssue.Issue;
+
+                issueScopeText.Text = scopedIssue.Scope;
                 issueTimestampText.Text = issue.GetEditorTimestamp();
                 issueDetailFlow.Text = issue.ToString();
 
@@ -183,7 +189,7 @@ namespace osu.Game.Screens.Edit.Submission
 
         private partial class HeaderText : OsuSpriteText
         {
-            public HeaderText(string text)
+            public HeaderText(LocalisableString text)
             {
                 Text = text;
                 Font = OsuFont.GetFont(size: Verify.IssueTable.TEXT_SIZE, weight: FontWeight.Bold);
