@@ -13,6 +13,7 @@ namespace osu.Game.Screens.Edit.Timing
             new GroupSection(),
             new TimingSection(),
             new EffectSection(),
+            new SyncSection(),
         };
     }
 }
