@@ -123,8 +123,7 @@ namespace osu.Game.Screens.Edit.Timing
             syncBookmarks.Disabled = !canSyncToOtherDifficulties;
             syncPreviewPoint.Disabled = !canSyncToOtherDifficulties;
 
-            syncButton.Enabled.Value = canSyncToOtherDifficulties
-                                       && (syncBookmarks.Value || syncPreviewPoint.Value);
+            syncButton.Enabled.Value = canSyncToOtherDifficulties && (syncBookmarks.Value || syncPreviewPoint.Value);
         }
 
         private void syncToAllOtherDifficulties()
