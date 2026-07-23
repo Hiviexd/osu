@@ -19,17 +19,18 @@ namespace osu.Game.Rulesets.Edit
             new CheckBackgroundPresence(),
             new CheckBackgroundQuality(),
             new CheckVideoResolution(),
+            new CheckVideoUsage(),
 
             // Audio
             new CheckAudioPresence(),
             new CheckAudioQuality(),
             new CheckMutedObjects(),
-            new CheckFewHitsounds(),
             new CheckTooShortAudioFiles(),
             new CheckAudioInVideo(),
             new CheckDelayedHitsounds(),
             new CheckSongFormat(),
             new CheckHitsoundsFormat(),
+            new CheckInconsistentAudio(),
 
             // Files
             new CheckZeroByteFiles(),

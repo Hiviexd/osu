@@ -25,6 +25,14 @@ namespace osu.Game.Tests.Visual.Gameplay
         protected TestReplayPlayer Player = null!;
 
         [Test]
+        public void TestFailedBeatmapLoad()
+        {
+            loadPlayerWithBeatmap(new TestBeatmap(new OsuRuleset().RulesetInfo, withHitObjects: false));
+
+            AddUntilStep("wait for exit", () => Player.IsCurrentScreen());
+        }
+
+        [Test]
         public void TestPauseViaSpace()
         {
             loadPlayerWithBeatmap();
@@ -189,8 +197,7 @@ namespace osu.Game.Tests.Visual.Gameplay
             AddStep("load player", () => LoadScreen(Player));
             AddUntilStep("wait for loaded", () => Player.IsCurrentScreen());
             AddStep("seek to 8000", () => Player.Seek(8000));
-            AddUntilStep("wait for fail", () => Player.GameplayState.HasFailed);
-            AddAssert("player failed after 10000", () => Player.GameplayClockContainer.CurrentTime, () => Is.GreaterThanOrEqualTo(10000));
+            AddUntilStep("fail indicator visible", () => Player.ChildrenOfType<ReplayFailIndicator>().Any(indicator => indicator.IsAlive && indicator.IsPresent));
         }
 
         [Test]
@@ -204,7 +211,34 @@ namespace osu.Game.Tests.Visual.Gameplay
             AddStep("move mouse to centre of screen", () => InputManager.MoveMouseTo(Player.ScreenSpaceDrawQuad.Centre));
             AddUntilStep("wait for settings overlay hidden", () => settingsOverlay().Expanded.Value, () => Is.False);
 
-            PlayerSettingsOverlay settingsOverlay() => Player.ChildrenOfType<PlayerSettingsOverlay>().Single();
+            ReplaySettingsOverlay settingsOverlay() => Player.ChildrenOfType<ReplaySettingsOverlay>().Single();
+        }
+
+        [Test]
+        public void TestChangePlaybackRateViaHoldingShift()
+        {
+            loadPlayerWithBeatmap();
+
+            double? lastRate = null;
+
+            AddUntilStep("wait for first hit", () => Player.ScoreProcessor.TotalScore.Value > 0);
+            AddStep("Change playback rate with shift", () =>
+            {
+                lastRate = Player.GameplayClockContainer.Rate;
+                InputManager.PressKey(Key.ShiftLeft);
+            });
+
+            AddWaitStep("wait some", 5);
+
+            AddAssert("rate changed", () => lastRate != Player.GameplayClockContainer.Rate);
+
+            AddStep("Change playback rate by releasing shift", () =>
+            {
+                lastRate = Player.GameplayClockContainer.Rate;
+                InputManager.ReleaseKey(Key.ShiftLeft);
+            });
+            AddWaitStep("wait some", 5);
+            AddAssert("rate changed", () => lastRate != Player.GameplayClockContainer.Rate);
         }
 
         private void loadPlayerWithBeatmap(IBeatmap? beatmap = null)
